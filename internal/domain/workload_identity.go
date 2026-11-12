@@ -45,9 +45,9 @@ const (
 
 //go:generate enumer -type SubjectMatchType -transform snake -trimprefix SubjectMatchType
 
-// defaultWorkloadIdentityAlgorithms is the signature allowlist used when a
+// DefaultWorkloadIdentityAlgorithms is the signature allowlist used when a
 // configuration does not specify one. Only asymmetric algs are permitted.
-var defaultWorkloadIdentityAlgorithms = []string{"RS256", "ES384", "ES512", "EdDSA"}
+var DefaultWorkloadIdentityAlgorithms = []string{"RS256", "ES256", "EdDSA"}
 
 // allowedWorkloadIdentityAlgorithms is the complete set of accepted signing
 // algorithms. `none` and MAC-based algs are intentionally absent.
@@ -99,7 +99,7 @@ type WorkloadIdentityFederation struct {
 // when none were provided.
 func (f *WorkloadIdentityFederation) EffectiveAlgorithms() []string {
 	if len(f.Algorithms) == 0 {
-		return defaultWorkloadIdentityAlgorithms
+		return DefaultWorkloadIdentityAlgorithms
 	}
 	return f.Algorithms
 }
