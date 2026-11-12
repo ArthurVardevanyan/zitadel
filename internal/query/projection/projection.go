@@ -55,6 +55,7 @@ var (
 	ProjectMemberProjection             *handler.Handler
 	ProjectGrantMemberProjection        *handler.Handler
 	AuthNKeyProjection                  *handler.Handler
+	WorkloadIdentityProjection          *handler.Handler
 	PersonalAccessTokenProjection       *handler.Handler
 	UserGrantProjection                 *handler.Handler
 	UserMetadataProjection              *handler.Handler
@@ -166,6 +167,7 @@ func Create(ctx context.Context, sqlClient *database.DB, es handler.EventStore, 
 	ProjectMemberProjection = newProjectMemberProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["project_members"]))
 	ProjectGrantMemberProjection = newProjectGrantMemberProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["project_grant_members"]))
 	AuthNKeyProjection = newAuthNKeyProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["authn_keys"]))
+	WorkloadIdentityProjection = newWorkloadIdentityProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["workload_identities"]))
 	PersonalAccessTokenProjection = newPersonalAccessTokenProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["personal_access_tokens"]))
 	UserGrantProjection = newUserGrantProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["user_grants"]))
 	UserMetadataProjection = newUserMetadataProjection(ctx, applyCustomConfig(projectionConfig, config.Customizations["user_metadata"]))
@@ -361,6 +363,7 @@ func newProjectionsList() {
 		ProjectMemberProjection,
 		ProjectGrantMemberProjection,
 		AuthNKeyProjection,
+		WorkloadIdentityProjection,
 		PersonalAccessTokenProjection,
 		UserGrantProjection,
 		UserMetadataProjection,
