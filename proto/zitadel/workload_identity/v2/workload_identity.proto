@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package zitadel.workload_identity.v2;
+
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/zitadel/zitadel/pkg/grpc/workload_identity/v2;workload_identity";
+
+// The state of a workload identity federation configuration.
+enum WorkloadIdentityState {
+  WORKLOAD_IDENTITY_STATE_UNSPECIFIED = 0;
+  // The configuration is active and assertions are verified against it.
+  WORKLOAD_IDENTITY_STATE_ACTIVE = 1;
+  // The configuration is inactive and assertions matching it are rejected.
+  WORKLOAD_IDENTITY_STATE_INACTIVE = 2;
+}
+
+// SubjectCondition restricts which subjects of an external issuer are mapped
+// onto the owner of the configuration. At least one condition of a
+// configuration must match the `sub` claim of the assertion.
+message SubjectCondition {
+  oneof condition {
+    // exact matches the whole `sub` claim (e.g. `repo:owner/name:environment:prod`).
+    string exact = 1 [
+      (validate.rules).string = {min_len: 1, max_len: 512},
+      (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "\"repo:ArthurVardevanyan/HomeLab:ref:refs/heads/main\""}
+    ];
+    // prefix matches the beginning of the `sub` claim.
+    string prefix = 2 [(validate.rules).string = {min_len: 1, max_len: 512}];
+    // regex is an anchored (full match) RE2 regular expression matched against the `sub` claim.
+    string regex = 3 [
+      (validate.rules).string = {min_len: 1, max_len: 512},
+      (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "\"repo:ArthurVardevanyan/.*:environment:prod\""}
+    ];
+  }
+}
+
+// WorkloadIdentityFederationConfig describes a trusted external OIDC issuer
+// and the rules which assertions of that issuer must satisfy to be accepted
+// for the owner (application or service user) of the configuration.
+message WorkloadIdentityFederationConfig {
+  // The unique identifier of the configuration.
+  string id = 1 [(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "\"229280420357063169\""}];
+
+  // The name of the configuration.
+  string name = 2 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "\"github-actions\""}
+  ];
+
+  // The trusted issuer URL (`iss` claim) of the external OIDC provider.
+  // Keys are resolved through OIDC discovery, unless jwks_uri is set.
+  string issuer = 3 [
+    (validate.rules).string = {min_len: 1, max_len: 512},
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "\"https://token.actions.githubusercontent.com\""}
+  ];
+
+  // An explicit JWKS URL, used instead of OIDC discovery under the issuer.
+  string jwks_uri = 4 [
+    (validate.rules).string.uri = true,
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "\"https://oidc.example.com/keys\""}
+  ];
+
+  // The audiences the assertion must contain in its `aud` claim. At least one audience is required.
+  repeated string audiences = 5 [
+    (validate.rules).repeated = {min_items: 1, max_items: 20, items: {string: {min_len: 1, max_len: 256}}},
+    (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "[\"https://zitadel.example.com\"]"}
+  ];
+
+  // The conditions the `sub` claim of the assertion has to satisfy.
+  // At least one condition must match.
+  repeated SubjectCondition subject_conditions = 6 [(validate.rules).repeated = {min_items: 1, max_items: 50}];
+
+  // The allowed signing algorithms. Empty means the server default
+  // (RS256, ES384, ES512, EdDSA). Only asymmetric algorithms are accepted.
+  repeated string algorithms = 7 [(validate.rules).repeated = {max_items: 10, items: {string: {min_len: 1, max_len: 16}}}];
+
+  // The state of the configuration.
+  WorkloadIdentityState state = 8;
+
+  // The timestamp of the creation of the configuration.
+  google.protobuf.Timestamp creation_date = 9;
+
+  // The timestamp of the last change of the configuration.
+  google.protobuf.Timestamp change_date = 10;
+}

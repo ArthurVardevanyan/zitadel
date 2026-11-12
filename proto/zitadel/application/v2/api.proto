@@ -9,6 +9,9 @@ option go_package = "github.com/zitadel/zitadel/pkg/grpc/application/v2;applicat
 enum APIAuthMethodType {
   API_AUTH_METHOD_TYPE_BASIC = 0;
   API_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT = 1;
+  // The client authenticates with assertions issued by an external OIDC issuer,
+  // verified against the workload identity federations configured on the application.
+  API_AUTH_METHOD_TYPE_FEDERATED_ASSERTION = 2;
 }
 
 message APIConfiguration {

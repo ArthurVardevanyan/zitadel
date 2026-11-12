@@ -40,6 +40,9 @@ enum OIDCAuthMethodType {
   OIDC_AUTH_METHOD_TYPE_POST = 1;
   OIDC_AUTH_METHOD_TYPE_NONE = 2;
   OIDC_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT = 3;
+  // The client authenticates with assertions issued by an external OIDC issuer,
+  // verified against the workload identity federations configured on the application.
+  OIDC_AUTH_METHOD_TYPE_FEDERATED_ASSERTION = 4;
 }
 
 enum OIDCVersion {

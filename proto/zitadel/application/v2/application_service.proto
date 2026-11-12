@@ -14,6 +14,7 @@ import "zitadel/application/v2/login.proto";
 import "zitadel/application/v2/oidc.proto";
 import "zitadel/filter/v2/filter.proto";
 import "zitadel/protoc_gen_zitadel/v2/options.proto";
+import "zitadel/workload_identity/v2/workload_identity.proto";
 
 option go_package = "github.com/zitadel/zitadel/pkg/grpc/application/v2;application";
 
@@ -176,6 +177,59 @@ service ApplicationService {
   // Required permissions:
   //   - project.app.read
   rpc ListApplicationKeys(ListApplicationKeysRequest) returns (ListApplicationKeysResponse) {
+    option (zitadel.protoc_gen_zitadel.v2.options) = {
+      auth_option: {permission: "authenticated"}
+    };
+  }
+
+  // Add Workload Identity Federation
+  //
+  // Add a workload identity federation configuration to the application.
+  // Once added, and the application uses the federated assertion authentication method,
+  // the application can authenticate at the token and introspection endpoints with
+  // short-lived assertions issued by the configured external OIDC issuer,
+  // without any client secret or Zitadel-managed key.
+  //
+  // Required permissions:
+  //   - project.app.write
+  rpc AddWorkloadIdentityFederation(AddApplicationWorkloadIdentityFederationRequest) returns (AddApplicationWorkloadIdentityFederationResponse) {
+    option (zitadel.protoc_gen_zitadel.v2.options) = {
+      auth_option: {permission: "authenticated"}
+    };
+  }
+
+  // Update Workload Identity Federation
+  //
+  // Update the workload identity federation configuration matching the provided IDs.
+  // Only the fields set in the update mask will be changed.
+  //
+  // Required permissions:
+  //   - project.app.write
+  rpc UpdateWorkloadIdentityFederation(UpdateApplicationWorkloadIdentityFederationRequest) returns (UpdateApplicationWorkloadIdentityFederationResponse) {
+    option (zitadel.protoc_gen_zitadel.v2.options) = {
+      auth_option: {permission: "authenticated"}
+    };
+  }
+
+  // Remove Workload Identity Federation
+  //
+  // Remove the workload identity federation configuration matching the provided IDs.
+  //
+  // Required permissions:
+  //   - project.app.write
+  rpc RemoveWorkloadIdentityFederation(RemoveApplicationWorkloadIdentityFederationRequest) returns (RemoveApplicationWorkloadIdentityFederationResponse) {
+    option (zitadel.protoc_gen_zitadel.v2.options) = {
+      auth_option: {permission: "authenticated"}
+    };
+  }
+
+  // List Workload Identity Federations
+  //
+  // List all workload identity federation configurations of the provided application.
+  //
+  // Required permissions:
+  //   - project.app.read
+  rpc ListWorkloadIdentityFederations(ListApplicationWorkloadIdentityFederationsRequest) returns (ListApplicationWorkloadIdentityFederationsResponse) {
     option (zitadel.protoc_gen_zitadel.v2.options) = {
       auth_option: {permission: "authenticated"}
     };
@@ -869,5 +923,120 @@ message ListApplicationKeysResponse {
   repeated ApplicationKey keys = 1;
 
   // Contains the total number of application keys matching the query and the applied limit.
+  zitadel.filter.v2.PaginationResponse pagination = 2;
+}
+
+message AddApplicationWorkloadIdentityFederationRequest {
+  // The unique ID of the application to add the federation configuration to.
+  string application_id = 1 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The name of the federation configuration.
+  string name = 2 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The trusted external OIDC issuer URL (the `iss` claim it must carry).
+  string issuer = 3 [
+    (validate.rules).string = {min_len: 1, max_len: 512},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // An explicit JWKS URL, used instead of OIDC discovery under the issuer.
+  string jwks_uri = 4 [(validate.rules).string = {max_len: 512}];
+
+  // The audiences the assertion must carry in its `aud` claim.
+  repeated string audiences = 5 [
+    (validate.rules).repeated = {min_items: 1, max_items: 20, items: {string: {min_len: 1, max_len: 256}}},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The conditions the `sub` claim of the assertion has to satisfy.
+  repeated zitadel.workload_identity.v2.SubjectCondition subject_conditions = 6 [
+    (validate.rules).repeated = {min_items: 1, max_items: 50},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The allowed signing algorithms. Empty means the server default.
+  repeated string algorithms = 7 [(validate.rules).repeated = {max_items: 10, items: {string: {min_len: 1, max_len: 16}}}];
+}
+
+message AddApplicationWorkloadIdentityFederationResponse {
+  // The ID of the created federation configuration.
+  string id = 1;
+}
+
+message UpdateApplicationWorkloadIdentityFederationRequest {
+  // The unique ID of the application owning the federation configuration.
+  string application_id = 1 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The unique ID of the federation configuration to update.
+  string id = 2 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The name of the federation configuration.
+  string name = 4 [(validate.rules).string = {min_len: 1, max_len: 200}];
+
+  // The trusted external OIDC issuer URL.
+  string issuer = 5 [(validate.rules).string = {min_len: 1, max_len: 512}];
+
+  // An explicit JWKS URL.
+  string jwks_uri = 6 [(validate.rules).string = {max_len: 512}];
+
+  // The audiences the assertion must carry.
+  repeated string audiences = 7 [(validate.rules).repeated = {min_items: 1, max_items: 20, items: {string: {min_len: 1, max_len: 256}}}];
+
+  // The conditions the `sub` claim of the assertion has to satisfy.
+  repeated zitadel.workload_identity.v2.SubjectCondition subject_conditions = 8 [(validate.rules).repeated = {min_items: 1, max_items: 50}];
+
+  // The allowed signing algorithms.
+  repeated string algorithms = 9 [(validate.rules).repeated = {max_items: 10, items: {string: {min_len: 1, max_len: 16}}}];
+
+  // The state of the configuration.
+  zitadel.workload_identity.v2.WorkloadIdentityState state = 10;
+}
+
+message UpdateApplicationWorkloadIdentityFederationResponse {}
+
+message RemoveApplicationWorkloadIdentityFederationRequest {
+  // The unique ID of the application owning the federation configuration.
+  string application_id = 1 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // The unique ID of the federation configuration to remove.
+  string id = 2 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+}
+
+message RemoveApplicationWorkloadIdentityFederationResponse {}
+
+message ListApplicationWorkloadIdentityFederationsRequest {
+  // The unique ID of the application to list federation configurations for.
+  string application_id = 1 [
+    (validate.rules).string = {min_len: 1, max_len: 200},
+    (google.api.field_behavior) = REQUIRED
+  ];
+
+  // Pagination and sorting.
+  zitadel.filter.v2.PaginationRequest pagination = 2;
+}
+
+message ListApplicationWorkloadIdentityFederationsResponse {
+  // The workload identity federation configurations of the application.
+  repeated zitadel.workload_identity.v2.WorkloadIdentityFederationConfig federations = 1;
+
+  // Contains the total number of federation configurations and the applied limit.
   zitadel.filter.v2.PaginationResponse pagination = 2;
 }
