@@ -4020,6 +4020,10 @@ message AddWorkloadIdentityFederationResponse {
   zitadel.object.v2.Details details = 2;
 }
 
+// Replaces the entire desired state of a single workload identity federation
+// configuration of the service user. All configuration fields must be sent,
+// omitted fields are not merged with the previous state. The owner binding of
+// the configuration cannot be changed.
 message UpdateWorkloadIdentityFederationRequest {
   // ID of the user owning the federation configuration.
   string user_id = 1 [
@@ -4052,7 +4056,7 @@ message UpdateWorkloadIdentityFederationRequest {
   repeated string algorithms = 8 [(validate.rules).repeated = {max_items: 10, items: {string: {min_len: 1, max_len: 16}}}];
 
   // The state of the configuration.
-  zitadel.workload_identity.v2.WorkloadIdentityState state = 9;
+  zitadel.workload_identity.v2.WorkloadIdentityState state = 9 [(validate.rules).enum = {defined_only: true}];
 }
 
 message UpdateWorkloadIdentityFederationResponse {
