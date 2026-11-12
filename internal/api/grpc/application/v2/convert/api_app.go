@@ -43,6 +43,8 @@ func apiAuthMethodTypeToDomain(authType application.APIAuthMethodType) domain.AP
 		return domain.APIAuthMethodTypeBasic
 	case application.APIAuthMethodType_API_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT:
 		return domain.APIAuthMethodTypePrivateKeyJWT
+	case application.APIAuthMethodType_API_AUTH_METHOD_TYPE_FEDERATED_ASSERTION:
+		return domain.APIAuthMethodTypeFederatedAssertion
 	default:
 		return domain.APIAuthMethodTypeBasic
 	}
@@ -54,6 +56,8 @@ func apiAuthMethodTypeToPb(methodType domain.APIAuthMethodType) application.APIA
 		return application.APIAuthMethodType_API_AUTH_METHOD_TYPE_BASIC
 	case domain.APIAuthMethodTypePrivateKeyJWT:
 		return application.APIAuthMethodType_API_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT
+	case domain.APIAuthMethodTypeFederatedAssertion:
+		return application.APIAuthMethodType_API_AUTH_METHOD_TYPE_FEDERATED_ASSERTION
 	default:
 		return application.APIAuthMethodType_API_AUTH_METHOD_TYPE_BASIC
 	}

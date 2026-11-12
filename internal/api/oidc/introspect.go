@@ -146,6 +146,16 @@ func (s *Server) introspectionClientAuth(ctx context.Context, cc *op.ClientCrede
 		}
 
 		if cc.ClientAssertion != "" {
+			if federatedIntrospectionClient(client) {
+				verified, wifErr := workloadAssertionMatchesApp(ctx, s, client.AppID, cc.ClientAssertion)
+				if wifErr != nil {
+					return "", "", false, oidc.ErrUnauthorizedClient().WithParent(wifErr).WithReturnParentToClient(authz.GetFeatures(ctx).DebugOIDCParentError)
+				}
+				if !verified {
+					return "", "", false, oidc.ErrUnauthorizedClient().WithDescription("invalid client assertion")
+				}
+				return client.ClientID, client.ProjectID, client.ProjectRoleAssertion, nil
+			}
 			verifier := op.NewJWTProfileVerifierKeySet(keySetMap(client.PublicKeys), op.IssuerFromContext(ctx), time.Hour, time.Second)
 			if _, err := op.VerifyJWTAssertion(ctx, cc.ClientAssertion, verifier); err != nil {
 				return "", "", false, oidc.ErrUnauthorizedClient().WithParent(err).WithReturnParentToClient(authz.GetFeatures(ctx).DebugOIDCParentError)
@@ -206,11 +216,32 @@ func (s *Server) clientFromCredentials(ctx context.Context, cc *op.ClientCredent
 		return nil, err
 	}
 	client, err = s.query.ActiveIntrospectionClientByID(ctx, clientID, assertion)
+	if errors.Is(err, sql.ErrNoRows) && assertion && cc.ClientID != "" && cc.ClientID != clientID {
+		// Workload identity federation: a client assertion from an external
+		// issuer carries that issuer as iss, not the Zitadel client id, so
+		// retry with the client_id sent along with the assertion.
+		client, err = s.query.ActiveIntrospectionClientByID(ctx, cc.ClientID, true)
+	}
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, oidc.ErrUnauthorizedClient().WithParent(err).WithReturnParentToClient(authz.GetFeatures(ctx).DebugOIDCParentError)
 	}
 	// any other error is regarded internal and should not be reported back to the client.
 	return client, err
+}
+
+// federatedIntrospectionClient reports whether the introspection client is
+// configured for workload identity federation. The enum semantics depend on
+// the application type: OIDC and API apps number their auth methods
+// independently, both are stored in the shared auth_method column.
+func federatedIntrospectionClient(client *query.IntrospectionClient) bool {
+	switch client.AppType {
+	case query.AppTypeAPI:
+		return domain.APIAuthMethodType(client.AuthMethodType) == domain.APIAuthMethodTypeFederatedAssertion
+	case query.AppTypeOIDC:
+		return domain.OIDCAuthMethodType(client.AuthMethodType) == domain.OIDCAuthMethodTypeFederatedAssertion
+	default:
+		return false
+	}
 }
 
 type introspectionTokenResult struct {

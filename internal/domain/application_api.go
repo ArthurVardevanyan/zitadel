@@ -31,6 +31,10 @@ type APIAuthMethodType int32
 const (
 	APIAuthMethodTypeBasic APIAuthMethodType = iota
 	APIAuthMethodTypePrivateKeyJWT
+	// APIAuthMethodTypeFederatedAssertion authenticates the API app with JWT
+	// assertions issued by an external OIDC issuer, validated against the
+	// workload identity federation configurations owned by the app.
+	APIAuthMethodTypeFederatedAssertion
 )
 
 func (a *APIApp) IsValid() bool {

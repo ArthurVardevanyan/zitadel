@@ -133,6 +133,10 @@ const (
 	OIDCAuthMethodTypePost
 	OIDCAuthMethodTypeNone
 	OIDCAuthMethodTypePrivateKeyJWT
+	// OIDCAuthMethodTypeFederatedAssertion authenticates the app with JWT
+	// assertions issued by an external OIDC issuer, validated against the
+	// workload identity federation configurations owned by the app.
+	OIDCAuthMethodTypeFederatedAssertion
 )
 
 type Compliance struct {

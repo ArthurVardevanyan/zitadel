@@ -1,10 +1,10 @@
 with config as (
-		select instance_id, app_id, client_id, client_secret, 'api' as app_type
+		select instance_id, app_id, client_id, client_secret, 'api' as app_type, auth_method
 		from projections.apps7_api_configs
 		where instance_id = $1
 			and client_id = $2
 	union all
-		select instance_id, app_id, client_id, client_secret, 'oidc' as app_type
+		select instance_id, app_id, client_id, client_secret, 'oidc' as app_type, auth_method_type as auth_method
 		from projections.apps7_oidc_configs
 		where instance_id = $1
 			and client_id = $2
@@ -17,7 +17,7 @@ keys as (
 		and identifier = $2
 		and expiration > current_timestamp
 )
-select c.app_id, c.client_id, c.client_secret, c.app_type, 
+select c.app_id, c.client_id, c.client_secret, c.app_type, c.auth_method, 
        a.project_id, a.resource_owner, p.project_role_assertion, 
        k.public_keys
 from config c

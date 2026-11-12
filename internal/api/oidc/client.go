@@ -199,6 +199,12 @@ func (s *Server) VerifyClient(ctx context.Context, r *op.Request[op.ClientCreden
 		return nil, err
 	}
 	client, err := s.query.ActiveOIDCClientByID(ctx, clientID, assertion)
+	if zerrors.IsNotFound(err) && assertion && r.Data.ClientID != "" && r.Data.ClientID != clientID {
+		// Workload identity federation: a client assertion from an external
+		// issuer carries that issuer as iss, not the Zitadel client id, so
+		// retry with the client_id sent along with the assertion.
+		client, err = s.query.ActiveOIDCClientByID(ctx, r.Data.ClientID, true)
+	}
 	if zerrors.IsNotFound(err) {
 		return nil, oidc.ErrInvalidClient().WithParent(err).WithReturnParentToClient(authz.GetFeatures(ctx).DebugOIDCParentError).WithDescription("no active client not found")
 	}
@@ -217,6 +223,8 @@ func (s *Server) VerifyClient(ctx context.Context, r *op.Request[op.ClientCreden
 		err = s.verifyClientSecret(ctx, client, r.Data.ClientSecret)
 	case domain.OIDCAuthMethodTypePrivateKeyJWT:
 		err = s.verifyClientAssertion(ctx, client, r.Data.ClientAssertion)
+	case domain.OIDCAuthMethodTypeFederatedAssertion:
+		err = s.verifyFederatedClientAssertion(ctx, client, r.Data.ClientAssertion)
 	case domain.OIDCAuthMethodTypeNone:
 	}
 	if err != nil {
@@ -238,6 +246,49 @@ func (s *Server) verifyClientAssertion(ctx context.Context, client *query.OIDCCl
 		return oidc.ErrInvalidClient().WithParent(err).WithReturnParentToClient(authz.GetFeatures(ctx).DebugOIDCParentError).WithDescription("invalid assertion")
 	}
 	return nil
+}
+
+// verifyFederatedClientAssertion verifies the client_assertion of an
+// application configured for workload identity federation: it must pass at
+// least one active federation configuration owned by the application.
+// Unlike the jwt-bearer grant the application authenticates itself instead
+// of selecting a principal, so several matching configurations are fine.
+func (s *Server) verifyFederatedClientAssertion(ctx context.Context, client *query.OIDCClient, assertion string) (err error) {
+	ctx, span := tracing.NewSpan(ctx)
+	defer func() { span.EndWithError(err) }()
+
+	if assertion == "" {
+		return oidc.ErrInvalidClient().WithDescription("empty client assertion")
+	}
+	verified, err := workloadAssertionMatchesApp(ctx, s, client.AppID, assertion)
+	if err != nil {
+		return oidc.ErrInvalidClient().WithParent(err).WithReturnParentToClient(authz.GetFeatures(ctx).DebugOIDCParentError).WithDescription("invalid assertion")
+	}
+	if !verified {
+		return oidc.ErrInvalidClient().WithDescription("invalid assertion")
+	}
+	return nil
+}
+
+// workloadAssertionMatchesApp reports whether assertion verifies against any
+// active workload identity federation configuration owned by appID.
+func workloadAssertionMatchesApp(ctx context.Context, s *Server, appID, assertion string) (bool, error) {
+	if s.wifVerifier == nil {
+		return false, nil
+	}
+	identities, err := s.query.WorkloadIdentitiesByOwner(ctx, domain.WorkloadIdentityOwnerTypeApp, appID)
+	if err != nil {
+		return false, err
+	}
+	for _, identity := range identities {
+		if identity.State != domain.WorkloadIdentityStateActive {
+			continue
+		}
+		if _, err := s.wifVerifier.Verify(ctx, assertion, wifRuleFromWorkloadIdentity(identity)); err == nil {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *Server) verifyClientSecret(ctx context.Context, client *query.OIDCClient, secret string) (err error) {

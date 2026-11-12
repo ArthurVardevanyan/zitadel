@@ -167,6 +167,11 @@ func authMethodToOIDC(authType domain.OIDCAuthMethodType) oidc.AuthMethod {
 		return oidc.AuthMethodNone
 	case domain.OIDCAuthMethodTypePrivateKeyJWT:
 		return oidc.AuthMethodPrivateKeyJWT
+	case domain.OIDCAuthMethodTypeFederatedAssertion:
+		// the oidc library has no dedicated constant for the federated
+		// variant; like private_key_jwt, the client authenticates with a
+		// client_assertion
+		return oidc.AuthMethodPrivateKeyJWT
 	default:
 		return oidc.AuthMethodBasic
 	}

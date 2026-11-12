@@ -168,6 +168,8 @@ func oidcAuthMethodTypeToDomain(authType application.OIDCAuthMethodType) domain.
 		return domain.OIDCAuthMethodTypeNone
 	case application.OIDCAuthMethodType_OIDC_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT:
 		return domain.OIDCAuthMethodTypePrivateKeyJWT
+	case application.OIDCAuthMethodType_OIDC_AUTH_METHOD_TYPE_FEDERATED_ASSERTION:
+		return domain.OIDCAuthMethodTypeFederatedAssertion
 	default:
 		return domain.OIDCAuthMethodTypeBasic
 	}
@@ -329,6 +331,8 @@ func oidcAuthMethodTypeToPb(authType domain.OIDCAuthMethodType) application.OIDC
 		return application.OIDCAuthMethodType_OIDC_AUTH_METHOD_TYPE_NONE
 	case domain.OIDCAuthMethodTypePrivateKeyJWT:
 		return application.OIDCAuthMethodType_OIDC_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT
+	case domain.OIDCAuthMethodTypeFederatedAssertion:
+		return application.OIDCAuthMethodType_OIDC_AUTH_METHOD_TYPE_FEDERATED_ASSERTION
 	default:
 		return application.OIDCAuthMethodType_OIDC_AUTH_METHOD_TYPE_BASIC
 	}

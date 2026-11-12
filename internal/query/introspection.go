@@ -37,6 +37,7 @@ type IntrospectionClient struct {
 	ClientID             string
 	HashedSecret         string
 	AppType              AppType
+	AuthMethodType       int32
 	ProjectID            string
 	ResourceOwner        string
 	ProjectRoleAssertion bool
@@ -61,6 +62,7 @@ func (q *Queries) ActiveIntrospectionClientByID(ctx context.Context, clientID st
 			&client.ClientID,
 			&client.HashedSecret,
 			&client.AppType,
+			&client.AuthMethodType,
 			&client.ProjectID,
 			&client.ResourceOwner,
 			&client.ProjectRoleAssertion,
