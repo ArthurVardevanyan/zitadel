@@ -13,10 +13,24 @@ import (
 	"github.com/zitadel/zitadel/internal/domain"
 	"github.com/zitadel/zitadel/internal/eventstore/v1/models"
 	"github.com/zitadel/zitadel/internal/query"
+	"github.com/zitadel/zitadel/internal/zerrors"
 	"github.com/zitadel/zitadel/pkg/grpc/user/v2"
 )
 
+// checkWIFFeatureFlag rejects the federation methods while the
+// WorkloadIdentityFederation system config flag is disabled (dark launch).
+func (s *Server) checkWIFFeatureFlag() error {
+	if s.wifEnabled {
+		return nil
+	}
+	return zerrors.ThrowUnimplemented(nil, "USER-v2wif1", "Errors.WorkloadIdentity.Disabled")
+}
+
 func (s *Server) AddWorkloadIdentityFederation(ctx context.Context, req *connect.Request[user.AddWorkloadIdentityFederationRequest]) (*connect.Response[user.AddWorkloadIdentityFederationResponse], error) {
+	if err := s.checkWIFFeatureFlag(); err != nil {
+		return nil, err
+	}
+
 	wif, err := wif_convert.WorkloadIdentityCreateRequestToModel(req.Msg)
 	if err != nil {
 		return nil, err
@@ -37,6 +51,10 @@ func (s *Server) AddWorkloadIdentityFederation(ctx context.Context, req *connect
 }
 
 func (s *Server) UpdateWorkloadIdentityFederation(ctx context.Context, req *connect.Request[user.UpdateWorkloadIdentityFederationRequest]) (*connect.Response[user.UpdateWorkloadIdentityFederationResponse], error) {
+	if err := s.checkWIFFeatureFlag(); err != nil {
+		return nil, err
+	}
+
 	wif, err := wif_convert.WorkloadIdentityUpdateRequestToModel(req.Msg)
 	if err != nil {
 		return nil, err
@@ -56,6 +74,10 @@ func (s *Server) UpdateWorkloadIdentityFederation(ctx context.Context, req *conn
 }
 
 func (s *Server) RemoveWorkloadIdentityFederation(ctx context.Context, req *connect.Request[user.RemoveWorkloadIdentityFederationRequest]) (*connect.Response[user.RemoveWorkloadIdentityFederationResponse], error) {
+	if err := s.checkWIFFeatureFlag(); err != nil {
+		return nil, err
+	}
+
 	details, err := s.command.RemoveWorkloadIdentityFederation(ctx, &command.WorkloadIdentity{
 		ObjectRoot: models.ObjectRoot{
 			AggregateID: req.Msg.GetId(),
@@ -72,6 +94,10 @@ func (s *Server) RemoveWorkloadIdentityFederation(ctx context.Context, req *conn
 }
 
 func (s *Server) ListWorkloadIdentityFederations(ctx context.Context, req *connect.Request[user.ListWorkloadIdentityFederationsRequest]) (*connect.Response[user.ListWorkloadIdentityFederationsResponse], error) {
+	if err := s.checkWIFFeatureFlag(); err != nil {
+		return nil, err
+	}
+
 	// the owner keyed query itself is not permission filtered, so check the
 	// user (existence and permission) first
 	if _, err := s.query.GetUserByIDWithPermission(ctx, false, req.Msg.GetUserId(), s.checkPermission); err != nil {

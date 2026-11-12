@@ -22,6 +22,9 @@ type Server struct {
 	query           *query.Queries
 	systemDefaults  systemdefaults.SystemDefaults
 	checkPermission domain.PermissionCheck
+	// wifEnabled mirrors the WorkloadIdentityFederation system config flag;
+	// while false the federation methods answer Unimplemented (dark launch).
+	wifEnabled bool
 }
 
 func CreateServer(
@@ -29,12 +32,14 @@ func CreateServer(
 	command *command.Commands,
 	query *query.Queries,
 	checkPermission domain.PermissionCheck,
+	wifEnabled bool,
 ) *Server {
 	return &Server{
 		command:         command,
 		query:           query,
 		checkPermission: checkPermission,
 		systemDefaults:  systemDefaults,
+		wifEnabled:      wifEnabled,
 	}
 }
 

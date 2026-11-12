@@ -611,6 +611,7 @@ Errors:
     Impersonation:
       PolicyDisabled: "Impersonation is disabled in the instance security policy"
   WorkloadIdentity:
+    Disabled: "Workload identity federation is disabled"
     AlreadyExists: "Workload identity federation configuration already exists"
     NotFound: "Workload identity federation configuration not found"
     OwnerMismatch: "Workload identity federation configuration belongs to another owner"

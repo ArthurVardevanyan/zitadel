@@ -131,6 +131,7 @@ func NewServer(
 	hashConfig crypto.HashConfig,
 	federatedLogoutCache cache.Cache[federatedlogout.Index, string, *federatedlogout.FederatedLogout],
 	httpClient *http.Client,
+	wifConfig wif.Config,
 ) (*Server, error) {
 	opConfig, err := createOPConfig(config, defaultLogoutRedirectURI, cryptoKey)
 	if err != nil {
@@ -170,6 +171,10 @@ func NewServer(
 	if err != nil {
 		return nil, zerrors.ThrowInternal(err, "OIDC-Aij4e", "cannot create secret hasher")
 	}
+	// The workload identity federation verifier stays nil (and all
+	// dependent token endpoint branches fail closed or fall back to
+	// credentials) while the feature is disabled.
+	wifVerifier := wifConfig.Verifier(httpClient)
 	server := &Server{
 		LegacyServer: op.NewLegacyServer(&Provider{
 			Provider:          provider,
@@ -192,7 +197,7 @@ func NewServer(
 		encAlg:                     authAlg,
 		targetEncryptionAlgorithm:  targetEncryptionAlgorithm,
 		opCrypto:                   alg,
-		wifVerifier:                wif.New(wif.WithHTTPClient(httpClient)),
+		wifVerifier:                wifVerifier,
 		assetAPIPrefix:             assets.AssetAPI(),
 		httpClient:                 httpClient,
 		registrationEndpoint:       registrationEndpoint(config.CustomEndpoints),

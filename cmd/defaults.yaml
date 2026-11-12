@@ -781,6 +781,16 @@ Console:
     URL: "" # ZITADEL_CONSOLE_POSTHOG_URL
     Token: "" # ZITADEL_CONSOLE_POSTHOG_TOKEN
 
+WorkloadIdentityFederation:
+  # Enables workload identity federation: applications and service users can
+  # authenticate with short-lived JWTs signed by trusted external OIDC issuers
+  # (client assertion / JWT authorization grant). While false the management
+  # APIs answer Unimplemented and token endpoint assertions are rejected.
+  Enabled: false # ZITADEL_WORKLOADIDENTITYFEDERATION_ENABLED
+  # How long keys discovered from an external issuer are cached before refetching.
+  # Unknown key ids trigger a refetch regardless, rate limited to 10 seconds.
+  CacheTimeout: 10m # ZITADEL_WORKLOADIDENTITYFEDERATION_CACHETIMEOUT
+
 EncryptionKeys:
   DomainVerification:
     EncryptionKeyID: "domainVerificationKey" # ZITADEL_ENCRYPTIONKEYS_DOMAINVERIFICATION_ENCRYPTIONKEYID

@@ -544,7 +544,7 @@ func startAPIs(
 	if err := apis.RegisterService(ctx, user_v2beta.CreateServer(config.SystemDefaults, commands, queries, keys.User, keys.IDPConfig, idp.CallbackURL(), idp.SAMLRootURL(), assets.AssetAPI(), permissionCheck)); err != nil {
 		return nil, err
 	}
-	if err := apis.RegisterService(ctx, user_v2.CreateServer(commands, queries, config.SystemDefaults, keys.User, keys.IDPConfig, idp.CallbackURL(), idp.SAMLRootURL(), assets.AssetAPI(), permissionCheck)); err != nil {
+	if err := apis.RegisterService(ctx, user_v2.CreateServer(commands, queries, config.SystemDefaults, keys.User, keys.IDPConfig, idp.CallbackURL(), idp.SAMLRootURL(), assets.AssetAPI(), permissionCheck, config.WorkloadIdentityFederation.Enabled)); err != nil {
 		return nil, err
 	}
 	if err := apis.RegisterService(ctx, session_v2beta.CreateServer(config.SystemDefaults, commands, queries, permissionCheck)); err != nil {
@@ -616,7 +616,7 @@ func startAPIs(
 	if err := apis.RegisterService(ctx, app_v2beta.CreateServer(config.SystemDefaults, commands, queries, permissionCheck)); err != nil {
 		return nil, err
 	}
-	if err := apis.RegisterService(ctx, application.CreateServer(config.SystemDefaults, commands, queries, permissionCheck)); err != nil {
+	if err := apis.RegisterService(ctx, application.CreateServer(config.SystemDefaults, commands, queries, permissionCheck, config.WorkloadIdentityFederation.Enabled)); err != nil {
 		return nil, err
 	}
 	if err := apis.RegisterService(ctx, group_v2.CreateServer(config.SystemDefaults, commands, queries, permissionCheck)); err != nil {
@@ -688,6 +688,7 @@ func startAPIs(
 		config.SystemDefaults.SecretHasher,
 		federatedLogoutsCache,
 		httpClient,
+		config.WorkloadIdentityFederation,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to start oidc provider: %w", err)

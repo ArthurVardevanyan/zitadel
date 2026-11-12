@@ -32,6 +32,10 @@ type Server struct {
 	assetAPIPrefix func(context.Context) string
 
 	checkPermission domain.PermissionCheck
+
+	// wifEnabled mirrors the WorkloadIdentityFederation system config flag;
+	// while false the federation methods answer Unimplemented (dark launch).
+	wifEnabled bool
 }
 
 type Config struct{}
@@ -46,6 +50,7 @@ func CreateServer(
 	samlRootURL func(ctx context.Context, idpID string) string,
 	assetAPIPrefix func(ctx context.Context) string,
 	checkPermission domain.PermissionCheck,
+	wifEnabled bool,
 ) *Server {
 	return &Server{
 		command:         command,
@@ -57,6 +62,7 @@ func CreateServer(
 		assetAPIPrefix:  assetAPIPrefix,
 		checkPermission: checkPermission,
 		systemDefaults:  systemDefaults,
+		wifEnabled:      wifEnabled,
 	}
 }
 

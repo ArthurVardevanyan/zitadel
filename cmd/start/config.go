@@ -20,6 +20,7 @@ import (
 	"github.com/zitadel/zitadel/internal/api/http"
 	"github.com/zitadel/zitadel/internal/api/http/middleware"
 	"github.com/zitadel/zitadel/internal/api/oidc"
+	"github.com/zitadel/zitadel/internal/api/oidc/wif"
 	"github.com/zitadel/zitadel/internal/api/saml"
 	scim_config "github.com/zitadel/zitadel/internal/api/scim/config"
 	"github.com/zitadel/zitadel/internal/api/ui/console"
@@ -89,6 +90,10 @@ type Config struct {
 	Telemetry           *handlers.TelemetryPusherConfig
 	ServicePing         *serviceping.Config
 	HTTPClient          *http.ClientConfig
+
+	// WorkloadIdentityFederation gates the workload identity federation
+	// feature; it is disabled by default (dark launch).
+	WorkloadIdentityFederation wif.Config
 }
 
 type QuotasConfig struct {
