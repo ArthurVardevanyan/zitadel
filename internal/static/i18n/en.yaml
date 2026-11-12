@@ -610,6 +610,23 @@ Errors:
       NotForAPI: "Impersonated tokens not allowed for API"
     Impersonation:
       PolicyDisabled: "Impersonation is disabled in the instance security policy"
+  WorkloadIdentity:
+    AlreadyExists: "Workload identity federation configuration already exists"
+    NotFound: "Workload identity federation configuration not found"
+    OwnerMismatch: "Workload identity federation configuration belongs to another owner"
+    OwnerMissing: "Workload identity federation owner missing"
+    NameMissing: "Workload identity federation name missing"
+    StateInvalid: "Workload identity federation state invalid"
+    IssuerRequired: "Workload identity federation issuer required"
+    IssuerInvalid: "Workload identity federation issuer invalid"
+    JwksURIInvalid: "Workload identity federation jwks uri invalid"
+    AudienceRequired: "Workload identity federation audience required"
+    SubjectConditionRequired: "Workload identity federation subject condition required"
+    AlgorithmNotAllowed: "Workload identity federation algorithm not allowed"
+    SubjectCondition:
+      Empty: "Workload identity federation subject condition empty"
+      InvalidRegex: "Workload identity federation subject condition regex invalid"
+      AlreadyExists: "Workload identity federation subject already assigned"
   WebKey:
     ActiveDelete: "Cannot delete active web key"
     Config: "Invalid web key config"

@@ -20,7 +20,6 @@ const (
 type WorkloadIdentityAddedEvent struct {
 	eventstore.BaseEvent `json:"-"`
 
-	InstanceID        string                           `json:"instanceId,omitempty"`
 	OwnerType         domain.WorkloadIdentityOwnerType `json:"ownerType"`
 	OwnerID           string                           `json:"ownerId"`
 	Name              string                           `json:"name,omitempty"`
@@ -37,13 +36,12 @@ func (e *WorkloadIdentityAddedEvent) Payload() interface{} {
 }
 
 func (e *WorkloadIdentityAddedEvent) UniqueConstraints() []*eventstore.UniqueConstraint {
-	return nil
+	return NewAddUniqueConstraints(e.OwnerType, e.OwnerID, e.Issuer, e.SubjectConditions)
 }
 
 func NewWorkloadIdentityAddedEvent(
 	ctx context.Context,
 	aggregate *eventstore.Aggregate,
-	instanceID string,
 	ownerType domain.WorkloadIdentityOwnerType,
 	ownerID string,
 	name string,
@@ -60,7 +58,6 @@ func NewWorkloadIdentityAddedEvent(
 			aggregate,
 			WorkloadIdentityAddedEventType,
 		),
-		InstanceID:        instanceID,
 		OwnerType:         ownerType,
 		OwnerID:           ownerID,
 		Name:              name,
@@ -86,23 +83,39 @@ func WorkloadIdentityAddedEventMapper(event eventstore.Event) (eventstore.Event,
 
 // WorkloadIdentityChangedEvent carries the full new state of the configuration.
 // The command layer merges update fields into the previous state before push,
-// so reducers never need to track partial changes.
+// so reducers never need to track partial changes. Previous is only used to
+// release unique constraints of the replaced state.
 type WorkloadIdentityChangedEvent struct {
-	WorkloadIdentityAddedEvent `json:"-"`
+	eventstore.BaseEvent `json:"-"`
+
+	Previous          *WorkloadIdentityAddedEvent      `json:"previous,omitempty"`
+	OwnerType         domain.WorkloadIdentityOwnerType `json:"ownerType"`
+	OwnerID           string                           `json:"ownerId"`
+	Name              string                           `json:"name,omitempty"`
+	Issuer            string                           `json:"issuer"`
+	JwksURI           string                           `json:"jwksUri,omitempty"`
+	Audiences         []string                         `json:"audiences"`
+	SubjectConditions []domain.SubjectCondition        `json:"subjectConditions"`
+	Algorithms        []string                         `json:"algorithms,omitempty"`
+	State             domain.WorkloadIdentityState     `json:"state"`
 }
 
 func (e *WorkloadIdentityChangedEvent) Payload() interface{} {
-	return &e.WorkloadIdentityAddedEvent
+	return e
 }
 
 func (e *WorkloadIdentityChangedEvent) UniqueConstraints() []*eventstore.UniqueConstraint {
-	return nil
+	var constraints []*eventstore.UniqueConstraint
+	if e.Previous != nil {
+		constraints = NewRemoveUniqueConstraints(e.Previous.OwnerType, e.Previous.OwnerID, e.Previous.Issuer, e.Previous.SubjectConditions)
+	}
+	return append(constraints, NewAddUniqueConstraints(e.OwnerType, e.OwnerID, e.Issuer, e.SubjectConditions)...)
 }
 
 func NewWorkloadIdentityChangedEvent(
 	ctx context.Context,
 	aggregate *eventstore.Aggregate,
-	instanceID string,
+	previous *WorkloadIdentityAddedEvent,
 	ownerType domain.WorkloadIdentityOwnerType,
 	ownerID string,
 	name string,
@@ -114,62 +127,82 @@ func NewWorkloadIdentityChangedEvent(
 	state domain.WorkloadIdentityState,
 ) *WorkloadIdentityChangedEvent {
 	return &WorkloadIdentityChangedEvent{
-		WorkloadIdentityAddedEvent: WorkloadIdentityAddedEvent{
-			BaseEvent: *eventstore.NewBaseEventForPush(
-				ctx,
-				aggregate,
-				WorkloadIdentityChangedEventType,
-			),
-			InstanceID:        instanceID,
-			OwnerType:         ownerType,
-			OwnerID:           ownerID,
-			Name:              name,
-			Issuer:            issuer,
-			JwksURI:           jwksURI,
-			Audiences:         audiences,
-			SubjectConditions: subjectConditions,
-			Algorithms:        algorithms,
-			State:             state,
-		},
+		BaseEvent: *eventstore.NewBaseEventForPush(
+			ctx,
+			aggregate,
+			WorkloadIdentityChangedEventType,
+		),
+		Previous:          previous,
+		OwnerType:         ownerType,
+		OwnerID:           ownerID,
+		Name:              name,
+		Issuer:            issuer,
+		JwksURI:           jwksURI,
+		Audiences:         audiences,
+		SubjectConditions: subjectConditions,
+		Algorithms:        algorithms,
+		State:             state,
 	}
 }
 
 func WorkloadIdentityChangedEventMapper(event eventstore.Event) (eventstore.Event, error) {
-	added := &WorkloadIdentityAddedEvent{
+	e := &WorkloadIdentityChangedEvent{
 		BaseEvent: *eventstore.BaseEventFromRepo(event),
 	}
-	err := event.Unmarshal(added)
+	err := event.Unmarshal(e)
 	if err != nil {
 		return nil, zerrors.ThrowInternal(err, "WLDID-4pLq8", "unable to unmarshal workload identity changed")
 	}
-	return &WorkloadIdentityChangedEvent{WorkloadIdentityAddedEvent: *added}, nil
+	return e, nil
 }
 
-// WorkloadIdentityRemovedEvent deletes the configuration.
+// WorkloadIdentityRemovedEvent deletes the configuration. It keeps the fields
+// needed to release the unique constraints of the removed state.
 type WorkloadIdentityRemovedEvent struct {
 	eventstore.BaseEvent `json:"-"`
+
+	OwnerType         domain.WorkloadIdentityOwnerType `json:"ownerType"`
+	OwnerID           string                           `json:"ownerId"`
+	Issuer            string                           `json:"issuer"`
+	SubjectConditions []domain.SubjectCondition        `json:"subjectConditions"`
 }
 
 func (e *WorkloadIdentityRemovedEvent) Payload() interface{} {
-	return nil
+	return e
 }
 
 func (e *WorkloadIdentityRemovedEvent) UniqueConstraints() []*eventstore.UniqueConstraint {
-	return nil
+	return NewRemoveUniqueConstraints(e.OwnerType, e.OwnerID, e.Issuer, e.SubjectConditions)
 }
 
-func NewWorkloadIdentityRemovedEvent(ctx context.Context, aggregate *eventstore.Aggregate) *WorkloadIdentityRemovedEvent {
+func NewWorkloadIdentityRemovedEvent(
+	ctx context.Context,
+	aggregate *eventstore.Aggregate,
+	ownerType domain.WorkloadIdentityOwnerType,
+	ownerID string,
+	issuer string,
+	subjectConditions []domain.SubjectCondition,
+) *WorkloadIdentityRemovedEvent {
 	return &WorkloadIdentityRemovedEvent{
 		BaseEvent: *eventstore.NewBaseEventForPush(
 			ctx,
 			aggregate,
 			WorkloadIdentityRemovedEventType,
 		),
+		OwnerType:         ownerType,
+		OwnerID:           ownerID,
+		Issuer:            issuer,
+		SubjectConditions: subjectConditions,
 	}
 }
 
 func WorkloadIdentityRemovedEventMapper(event eventstore.Event) (eventstore.Event, error) {
-	return &WorkloadIdentityRemovedEvent{
+	e := &WorkloadIdentityRemovedEvent{
 		BaseEvent: *eventstore.BaseEventFromRepo(event),
-	}, nil
+	}
+	err := event.Unmarshal(e)
+	if err != nil {
+		return nil, zerrors.ThrowInternal(err, "WLDID-2xDs5", "unable to unmarshal workload identity removed")
+	}
+	return e, nil
 }

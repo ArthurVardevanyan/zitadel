@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _WorkloadIdentityStateName = "activeinactive"
+const _WorkloadIdentityStateName = "unspecifiedactiveinactive"
 
-var _WorkloadIdentityStateIndex = [...]uint8{0, 6, 14}
+var _WorkloadIdentityStateIndex = [...]uint8{0, 11, 17, 25}
 
-const _WorkloadIdentityStateLowerName = "activeinactive"
+const _WorkloadIdentityStateLowerName = "unspecifiedactiveinactive"
 
 func (i WorkloadIdentityState) String() string {
 	if i < 0 || i >= WorkloadIdentityState(len(_WorkloadIdentityStateIndex)-1) {
@@ -24,22 +24,26 @@ func (i WorkloadIdentityState) String() string {
 // Re-run the stringer command to generate them again.
 func _WorkloadIdentityStateNoOp() {
 	var x [1]struct{}
-	_ = x[WorkloadIdentityStateActive-(0)]
-	_ = x[WorkloadIdentityStateInactive-(1)]
+	_ = x[WorkloadIdentityStateUnspecified-(0)]
+	_ = x[WorkloadIdentityStateActive-(1)]
+	_ = x[WorkloadIdentityStateInactive-(2)]
 }
 
-var _WorkloadIdentityStateValues = []WorkloadIdentityState{WorkloadIdentityStateActive, WorkloadIdentityStateInactive}
+var _WorkloadIdentityStateValues = []WorkloadIdentityState{WorkloadIdentityStateUnspecified, WorkloadIdentityStateActive, WorkloadIdentityStateInactive}
 
 var _WorkloadIdentityStateNameToValueMap = map[string]WorkloadIdentityState{
-	_WorkloadIdentityStateName[0:6]:       WorkloadIdentityStateActive,
-	_WorkloadIdentityStateLowerName[0:6]:  WorkloadIdentityStateActive,
-	_WorkloadIdentityStateName[6:14]:      WorkloadIdentityStateInactive,
-	_WorkloadIdentityStateLowerName[6:14]: WorkloadIdentityStateInactive,
+	_WorkloadIdentityStateName[0:11]:       WorkloadIdentityStateUnspecified,
+	_WorkloadIdentityStateLowerName[0:11]:  WorkloadIdentityStateUnspecified,
+	_WorkloadIdentityStateName[11:17]:      WorkloadIdentityStateActive,
+	_WorkloadIdentityStateLowerName[11:17]: WorkloadIdentityStateActive,
+	_WorkloadIdentityStateName[17:25]:      WorkloadIdentityStateInactive,
+	_WorkloadIdentityStateLowerName[17:25]: WorkloadIdentityStateInactive,
 }
 
 var _WorkloadIdentityStateNames = []string{
-	_WorkloadIdentityStateName[0:6],
-	_WorkloadIdentityStateName[6:14],
+	_WorkloadIdentityStateName[0:11],
+	_WorkloadIdentityStateName[11:17],
+	_WorkloadIdentityStateName[17:25],
 }
 
 // WorkloadIdentityStateString retrieves an enum value from the enum constants string name.

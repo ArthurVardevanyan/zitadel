@@ -24,7 +24,10 @@ const (
 type WorkloadIdentityState int32
 
 const (
-	WorkloadIdentityStateActive WorkloadIdentityState = iota
+	// WorkloadIdentityStateUnspecified is the zero value, only used in write
+	// models to indicate that no configuration with the given ID exists.
+	WorkloadIdentityStateUnspecified WorkloadIdentityState = iota
+	WorkloadIdentityStateActive
 	WorkloadIdentityStateInactive
 )
 
@@ -132,6 +135,9 @@ func (f *WorkloadIdentityFederation) IsValid() error {
 		if !allowedWorkloadIdentityAlgorithms[alg] {
 			return zerrors.ThrowInvalidArgument(nil, "DOMAIN-wif7", "Errors.WorkloadIdentity.AlgorithmNotAllowed")
 		}
+	}
+	if f.State != WorkloadIdentityStateActive && f.State != WorkloadIdentityStateInactive {
+		return zerrors.ThrowInvalidArgument(nil, "DOMAIN-wif14", "Errors.WorkloadIdentity.StateInvalid")
 	}
 	return nil
 }
