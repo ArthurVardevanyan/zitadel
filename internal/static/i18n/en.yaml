@@ -623,6 +623,9 @@ Errors:
     AudienceRequired: "Workload identity federation audience required"
     SubjectConditionRequired: "Workload identity federation subject condition required"
     AlgorithmNotAllowed: "Workload identity federation algorithm not allowed"
+    AssertionRejected: "Workload identity federation assertion rejected"
+    AssertionAmbiguous: "Workload identity federation assertion matches multiple owners"
+    OwnerInactive: "Workload identity federation owner is not an active service user"
     SubjectCondition:
       Empty: "Workload identity federation subject condition empty"
       InvalidRegex: "Workload identity federation subject condition regex invalid"

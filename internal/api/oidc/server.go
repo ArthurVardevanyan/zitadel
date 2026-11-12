@@ -11,6 +11,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 
 	"github.com/zitadel/zitadel/internal/api/authz"
+	"github.com/zitadel/zitadel/internal/api/oidc/wif"
 	"github.com/zitadel/zitadel/internal/auth/repository"
 	"github.com/zitadel/zitadel/internal/command"
 	"github.com/zitadel/zitadel/internal/crypto"
@@ -42,6 +43,7 @@ type Server struct {
 	encAlg                    crypto.AuthAlgorithm
 	targetEncryptionAlgorithm crypto.EncryptionAlgorithm
 	opCrypto                  op.Crypto
+	wifVerifier               *wif.Verifier
 
 	assetAPIPrefix func(ctx context.Context) string
 	httpClient     *http.Client

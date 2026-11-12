@@ -15,6 +15,7 @@ import (
 	"github.com/zitadel/zitadel/internal/api/assets"
 	http_utils "github.com/zitadel/zitadel/internal/api/http"
 	"github.com/zitadel/zitadel/internal/api/http/middleware"
+	"github.com/zitadel/zitadel/internal/api/oidc/wif"
 	"github.com/zitadel/zitadel/internal/api/ui/login"
 	"github.com/zitadel/zitadel/internal/auth/repository"
 	"github.com/zitadel/zitadel/internal/cache"
@@ -191,6 +192,7 @@ func NewServer(
 		encAlg:                     authAlg,
 		targetEncryptionAlgorithm:  targetEncryptionAlgorithm,
 		opCrypto:                   alg,
+		wifVerifier:                wif.New(wif.WithHTTPClient(httpClient)),
 		assetAPIPrefix:             assets.AssetAPI(),
 		httpClient:                 httpClient,
 		registrationEndpoint:       registrationEndpoint(config.CustomEndpoints),
